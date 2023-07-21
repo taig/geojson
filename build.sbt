@@ -2,17 +2,8 @@ import sbtcrossproject.CrossPlugin.autoImport.CrossType
 import sbtcrossproject.CrossProject
 
 val Version = new {
-  val CatsEffect = "3.5.1"
-  val CatsMtl = "1.3.1"
   val Circe = "0.14.5"
-  val Fs2 = "3.7.0"
-  val Http4s = "1.0.0-M40"
-  val Java = "17"
-  val Log4Cats = "2.6.0"
-  val Munit = "0.7.29"
-  val MunitCatsEffect = "1.0.7"
   val Scala3 = "3.3.0"
-  val Slf4j = "1.7.36"
 }
 
 def module(identifier: Option[String], jvmOnly: Boolean): CrossProject = {
@@ -59,7 +50,7 @@ lazy val core = module(Some("core"), jvmOnly = false)
 lazy val circe = module(Some("circe"), jvmOnly = false)
   .settings(
     libraryDependencies ++=
-      "io.circe" %%% "circe-core" % "0.14.5" ::
+      "io.circe" %%% "circe-core" % Version.Circe ::
         Nil
   )
   .dependsOn(core)
