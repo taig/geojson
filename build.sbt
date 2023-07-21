@@ -47,9 +47,9 @@ lazy val root = module(identifier = None, jvmOnly = true)
       val github = file(".github")
       val workflows = github / "workflows"
 
-//      BlowoutYamlGenerator.lzy(workflows / "main.yml", GithubActionsGenerator.main(Version.Java)) ::
-//        BlowoutYamlGenerator.lzy(workflows / "pull-request.yml", GithubActionsGenerator.pullRequest(Version.Java)) ::
-      Nil
+      BlowoutYamlGenerator.lzy(workflows / "main.yml", GithubActionsGenerator.main(Version.Java)) ::
+        BlowoutYamlGenerator.lzy(workflows / "pull-request.yml", GithubActionsGenerator.pullRequest(Version.Java)) ::
+        Nil
     }
   )
   .aggregate(core, circe)
