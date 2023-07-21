@@ -7,11 +7,21 @@ import io.circe.JsonObject
 import io.circe.DecodingFailure
 
 trait circe:
+  implicit val decodeGeoJson: Decoder[GeoJson] = cursor =>
+    cursor
+      .get[String]("type")
+      .flatMap:
+        case FeatureCollection.Type => cursor.as[FeatureCollection]
+        case Feature.Type           => cursor.as[Feature]
+        case _                      => cursor.as[Geometry]
+
+  implicit val encodeGeoJson: Encoder.AsObject[GeoJson] =
+    case geoJson: FeatureCollection => geoJson.asJsonObject
+    case geoJson: Feature           => geoJson.asJsonObject
+    case geoJson: Geometry          => geoJson.asJsonObject
+
   implicit final val decodeFeatureCollection: Decoder[FeatureCollection] = cursor =>
-    for
-      _ <- cursor.get["FeatureCollection"]("type")
-      features <- cursor.get[List[Feature]]("features")
-    yield FeatureCollection(features)
+    cursor.get[List[Feature]]("features").map(FeatureCollection.apply)
 
   implicit final val encodeFeatureCollection: Encoder.AsObject[FeatureCollection] = feature =>
     JsonObject(
@@ -21,7 +31,6 @@ trait circe:
 
   implicit final val decodeFeature: Decoder[Feature] = cursor =>
     for
-      _ <- cursor.get["Feature"]("type")
       id <- cursor.get[Option[String]]("id")
       geometry <- cursor.get[Option[Geometry]]("geometry")
       properties <- cursor.get[Option[Map[String, String]]]("properties")
@@ -40,6 +49,12 @@ trait circe:
       .get[String]("type")
       .flatMap:
         case GeometryCollection.Type => cursor.as[GeometryCollection]
+        case LineString.Type         => cursor.as[LineString]
+        case MultiLineString.Type    => cursor.as[MultiLineString]
+        case MultiPoint.Type         => cursor.as[MultiPoint]
+        case MultiPolygon.Type       => cursor.as[MultiPolygon]
+        case Point.Type              => cursor.as[Point]
+        case Polygon.Type            => cursor.as[Polygon]
         case tpe                     => DecodingFailure(s"Unknown type: $tpe", cursor.downField("type").history).asLeft
 
   implicit final val encodeGeometry: Encoder.AsObject[Geometry] =

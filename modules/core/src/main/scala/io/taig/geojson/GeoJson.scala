@@ -1,6 +1,24 @@
 package io.taig.geojson
 
-sealed abstract class Geometry extends Product with Serializable:
+sealed abstract class GeoJson extends Product with Serializable
+
+final case class FeatureCollection(features: List[Feature]) extends GeoJson:
+  def combine(featureCollection: FeatureCollection): FeatureCollection = FeatureCollection(
+    this.features ++ featureCollection.features
+  )
+
+object FeatureCollection:
+  val Type: String = "FeatureCollection"
+
+final case class Feature(id: Option[String], geometry: Option[Geometry], properties: Option[Map[String, String]])
+    extends GeoJson:
+  def combine(feature: Feature): FeatureCollection = FeatureCollection(List(this, feature))
+  def toFeatureCollection: FeatureCollection = FeatureCollection(List(this))
+
+object Feature:
+  val Type: String = "Feature"
+
+sealed abstract class Geometry extends GeoJson:
   def combine(geometry: Geometry): Geometry
 
   final def toGeometryCollection: GeometryCollection = this match
