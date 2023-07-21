@@ -3,6 +3,7 @@ import sbtcrossproject.CrossProject
 
 val Version = new {
   val Circe = "0.14.5"
+  val Java = "17"
   val Scala3 = "3.3.0"
 }
 

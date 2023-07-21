@@ -39,7 +39,7 @@ object GithubActionsGenerator {
         ),
         Json.obj(
           "name" := "Fatal warnings",
-          "run" := "sbt -Dmode=ci +compile"
+          "run" := "sbt -Dmode=ci compile"
         )
       )
     )
