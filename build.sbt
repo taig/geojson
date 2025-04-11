@@ -4,7 +4,7 @@ import sbtcrossproject.CrossProject
 val Version = new {
   val Circe = "0.14.5"
   val Java = "17"
-  val Scala3 = "3.3.0"
+  val Scala3 = "3.3.5"
 }
 
 def module(identifier: Option[String], jvmOnly: Boolean): CrossProject = {
@@ -30,6 +30,8 @@ inThisBuild(
     versionScheme := Some("early-semver")
   )
 )
+
+noPublishSettings
 
 lazy val root = module(identifier = None, jvmOnly = true)
   .enablePlugins(BlowoutYamlPlugin)

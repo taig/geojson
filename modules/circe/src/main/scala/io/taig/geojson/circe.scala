@@ -1,10 +1,11 @@
 package io.taig.geojson
 
 import cats.syntax.all.*
-import io.circe.{Decoder, Encoder}
-import io.circe.syntax.*
-import io.circe.JsonObject
+import io.circe.Decoder
 import io.circe.DecodingFailure
+import io.circe.Encoder
+import io.circe.JsonObject
+import io.circe.syntax.*
 
 trait circe:
   implicit val decodeGeoJson: Decoder[GeoJson] = cursor =>
