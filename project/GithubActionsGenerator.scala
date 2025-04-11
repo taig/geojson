@@ -13,6 +13,11 @@ object GithubActionsGenerator {
       )
     )
 
+    val SetupSbt: Json = Json.obj(
+      "name" := "Setup sbt",
+      "uses" := "sbt/setup-sbt@v1"
+    )
+
     val Checkout: Json = Json.obj(
       "name" := "Checkout",
       "uses" := "actions/checkout@v3",
@@ -23,57 +28,99 @@ object GithubActionsGenerator {
   }
 
   object Job {
-    def lint(javaVersion: String): Json = Json.obj(
-      "name" := "Fatal warnings and code formatting",
+    def apply(name: String, mode: String = "DEV", needs: List[String] = Nil)(steps: Json*): Json = Json.obj(
+      "name" := name,
       "runs-on" := "ubuntu-latest",
-      "steps" := List(
-        Step.Checkout,
-        Step.setupJava(javaVersion),
-        Json.obj(
-          "name" := "Workflows",
-          "run" := "sbt -Dmode=ci blowoutCheck"
-        ),
-        Json.obj(
-          "name" := "Code formatting",
-          "run" := "sbt -Dmode=ci scalafmtCheckAll"
-        ),
-        Json.obj(
-          "name" := "Fatal warnings",
-          "run" := "sbt -Dmode=ci compile"
-        )
+      "env" := Json.obj(
+        s"SBT_TPOLECAT_$mode" := "true"
+      ),
+      "needs" := needs,
+      "steps" := steps
+    )
+
+    def blowout(javaVersion: String): Json = Job(name = "Blowout")(
+      Step.Checkout,
+      Step.setupJava(javaVersion),
+      Step.SetupSbt,
+      Json.obj("run" := "sbt blowoutCheck")
+    )
+
+    def scalafmt(javaVersion: String): Json = Job(name = "Scalafmt")(
+      Step.Checkout,
+      Step.setupJava(javaVersion),
+      Step.SetupSbt,
+      Json.obj("run" := "sbt scalafmtCheckAll")
+    )
+
+    def scalafix(javaVersion: String): Json = Job(name = "Scalafix", mode = "CI")(
+      Step.Checkout,
+      Step.setupJava(javaVersion),
+      Step.SetupSbt,
+      Json.obj("run" := "sbt scalafixCheckAll")
+    )
+
+    def lint(javaVersion: String): Json = Job(name = "Fatal warnings and code formatting")(
+      Step.Checkout,
+      Step.setupJava(javaVersion),
+      Json.obj(
+        "name" := "Workflows",
+        "run" := "sbt -Dmode=ci blowoutCheck"
+      ),
+      Json.obj(
+        "name" := "Code formatting",
+        "run" := "sbt -Dmode=ci scalafmtCheckAll"
+      ),
+      Json.obj(
+        "name" := "Fatal warnings",
+        "run" := "sbt -Dmode=ci compile"
       )
     )
+
+    def deploy(javaVersion: String): Json =
+      Job(name = "Deploy", mode = "RELEASE", needs = List("blowout", "scalafmt", "scalafix"))(
+        Step.Checkout,
+        Step.setupJava(javaVersion),
+        Step.SetupSbt,
+        Json.obj(
+          "name" := "Release",
+          "run" := "sbt ci-release",
+          "env" := Json.obj(
+            "PGP_PASSPHRASE" := "${{secrets.PGP_PASSPHRASE}}",
+            "PGP_SECRET" := "${{secrets.PGP_SECRET}}",
+            "SONATYPE_PASSWORD" := "${{secrets.SONATYPE_PASSWORD}}",
+            "SONATYPE_USERNAME" := "${{secrets.SONATYPE_USERNAME}}"
+          )
+        )
+      )
   }
 
   def main(javaVersion: String): Json = Json.obj(
-    "name" := "CI & CD",
+    "name" := "CI",
     "on" := Json.obj(
       "push" := Json.obj(
-        "branches" := List("main"),
+        "branches" := List("main")
+      )
+    ),
+    "jobs" := Json.obj(
+      "blowout" := Job.blowout(javaVersion),
+      "scalafmt" := Job.scalafmt(javaVersion),
+      "scalafix" := Job.scalafix(javaVersion),
+      "deploy" := Job.deploy(javaVersion)
+    )
+  )
+
+  def tag(javaVersion: String): Json = Json.obj(
+    "name" := "CD",
+    "on" := Json.obj(
+      "push" := Json.obj(
         "tags" := List("*.*.*")
       )
     ),
     "jobs" := Json.obj(
-      "lint" := Job.lint(javaVersion),
-      "deploy" := Json.obj(
-        "name" := "Deploy",
-        "runs-on" := "ubuntu-latest",
-        "needs" := List("lint"),
-        "steps" := List(
-          Step.Checkout,
-          Step.setupJava(javaVersion),
-          Json.obj(
-            "name" := "Release",
-            "run" := "sbt ci-release",
-            "env" := Json.obj(
-              "PGP_PASSPHRASE" := "${{secrets.PGP_PASSPHRASE}}",
-              "PGP_SECRET" := "${{secrets.PGP_SECRET}}",
-              "SONATYPE_PASSWORD" := "${{secrets.SONATYPE_PASSWORD}}",
-              "SONATYPE_USERNAME" := "${{secrets.SONATYPE_USERNAME}}"
-            )
-          )
-        )
-      )
+      "blowout" := Job.blowout(javaVersion),
+      "scalafmt" := Job.scalafmt(javaVersion),
+      "scalafix" := Job.scalafix(javaVersion),
+      "deploy" := Job.deploy(javaVersion)
     )
   )
 
@@ -85,7 +132,9 @@ object GithubActionsGenerator {
       )
     ),
     "jobs" := Json.obj(
-      "lint" := Job.lint(javaVersion)
+      "blowout" := Job.blowout(javaVersion),
+      "scalafmt" := Job.scalafmt(javaVersion),
+      "scalafix" := Job.scalafix(javaVersion)
     )
   )
 }

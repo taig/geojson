@@ -6,9 +6,12 @@ name: CI
     branches:
     - main
 jobs:
-  lint:
-    name: Fatal warnings and code formatting
+  blowout:
+    name: Blowout
     runs-on: ubuntu-latest
+    env:
+      SBT_TPOLECAT_DEV: 'true'
+    needs: []
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -20,9 +23,46 @@ jobs:
         distribution: temurin
         java-version: '17'
         cache: sbt
-    - name: Workflows
-      run: sbt -Dmode=ci blowoutCheck
-    - name: Code formatting
-      run: sbt -Dmode=ci scalafmtCheckAll
-    - name: Fatal warnings
-      run: sbt -Dmode=ci compile
+    - name: Setup sbt
+      uses: sbt/setup-sbt@v1
+    - run: sbt blowoutCheck
+  scalafmt:
+    name: Scalafmt
+    runs-on: ubuntu-latest
+    env:
+      SBT_TPOLECAT_DEV: 'true'
+    needs: []
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Setup Java JDK
+      uses: actions/setup-java@v3
+      with:
+        distribution: temurin
+        java-version: '17'
+        cache: sbt
+    - name: Setup sbt
+      uses: sbt/setup-sbt@v1
+    - run: sbt scalafmtCheckAll
+  scalafix:
+    name: Scalafix
+    runs-on: ubuntu-latest
+    env:
+      SBT_TPOLECAT_CI: 'true'
+    needs: []
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Setup Java JDK
+      uses: actions/setup-java@v3
+      with:
+        distribution: temurin
+        java-version: '17'
+        cache: sbt
+    - name: Setup sbt
+      uses: sbt/setup-sbt@v1
+    - run: sbt scalafixCheckAll

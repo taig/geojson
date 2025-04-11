@@ -43,6 +43,7 @@ lazy val root = module(identifier = None, jvmOnly = true)
 
       BlowoutYamlGenerator.lzy(workflows / "main.yml", GithubActionsGenerator.main(Version.Java)) ::
         BlowoutYamlGenerator.lzy(workflows / "pull-request.yml", GithubActionsGenerator.pullRequest(Version.Java)) ::
+        BlowoutYamlGenerator.lzy(workflows / "taig.yml", GithubActionsGenerator.main(Version.Java)) ::
         Nil
     }
   )
