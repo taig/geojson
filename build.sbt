@@ -5,9 +5,10 @@ val Version = new {
   val Circe = "0.14.12"
   val Java = "17"
   val Scala3 = "3.3.5"
+  val Skunk = "1.0.0-M10"
 }
 
-def module(identifier: Option[String], jvmOnly: Boolean): CrossProject = {
+def module(identifier: Option[String], jvmOnly: Boolean = false): CrossProject = {
   val platforms = List(JVMPlatform) ++ (if (jvmOnly) Nil else List(JSPlatform))
   CrossProject(identifier.getOrElse("root"), file(identifier.fold(".")("modules/" + _)))(platforms: _*)
     .crossType(CrossType.Pure)
@@ -49,9 +50,9 @@ lazy val root = module(identifier = None, jvmOnly = true)
   )
   .aggregate(core, circe)
 
-lazy val core = module(Some("core"), jvmOnly = false)
+lazy val core = module(Some("core"))
 
-lazy val circe = module(Some("circe"), jvmOnly = false)
+lazy val circe = module(Some("circe"))
   .settings(
     libraryDependencies ++=
       "io.circe" %%% "circe-core" % Version.Circe ::
