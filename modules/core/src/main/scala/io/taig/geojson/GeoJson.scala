@@ -1,8 +1,11 @@
 package io.taig.geojson
 
-sealed abstract class GeoJson extends Product with Serializable
+import cats.derived.*
+import cats.Eq
 
-final case class FeatureCollection(features: List[Feature]) extends GeoJson:
+sealed abstract class GeoJson extends Product with Serializable derives Eq
+
+final case class FeatureCollection(features: List[Feature]) extends GeoJson derives Eq:
   def combine(featureCollection: FeatureCollection): FeatureCollection = FeatureCollection(
     this.features ++ featureCollection.features
   )
@@ -11,21 +14,21 @@ object FeatureCollection:
   val Type: String = "FeatureCollection"
 
 final case class Feature(id: Option[String], geometry: Option[Geometry], properties: Option[Map[String, String]])
-    extends GeoJson:
+    extends GeoJson derives Eq:
   def combine(feature: Feature): FeatureCollection = FeatureCollection(List(this, feature))
   def toFeatureCollection: FeatureCollection = FeatureCollection(List(this))
 
 object Feature:
   val Type: String = "Feature"
 
-sealed abstract class Geometry extends GeoJson:
+sealed abstract class Geometry extends GeoJson derives Eq:
   def combine(geometry: Geometry): Geometry
 
   final def toGeometryCollection: GeometryCollection = this match
     case geometry: GeometryCollection => geometry
     case _                            => GeometryCollection(List(this))
 
-final case class GeometryCollection(geometries: List[Geometry]) extends Geometry:
+final case class GeometryCollection(geometries: List[Geometry]) extends Geometry derives Eq:
   override def combine(geometry: Geometry): GeometryCollection = geometry match
     case GeometryCollection(geometries) => GeometryCollection(this.geometries ++ geometries)
     case geometry                       => GeometryCollection(this.geometries :+ geometry)
@@ -33,7 +36,7 @@ final case class GeometryCollection(geometries: List[Geometry]) extends Geometry
 object GeometryCollection:
   val Type: String = "GeometryCollection"
 
-final case class LineString(first: Position, second: Position, additional: List[Position]) extends Geometry:
+final case class LineString(first: Position, second: Position, additional: List[Position]) extends Geometry derives Eq:
   def combine(geometry: LineString): MultiLineString = MultiLineString(List(this, geometry))
   def combine(geometry: MultiLineString): MultiLineString = MultiLineString(geometry.lineStrings :+ this)
   override def combine(geometry: Geometry): Geometry = geometry match
@@ -50,7 +53,7 @@ object LineString:
     case first :: second :: tail => Some(LineString(first, second, tail))
     case _                       => None
 
-final case class MultiLineString(lineStrings: List[LineString]) extends Geometry:
+final case class MultiLineString(lineStrings: List[LineString]) extends Geometry derives Eq:
   def combine(lineString: LineString): MultiLineString = MultiLineString(lineStrings :+ lineString)
   def combine(multiLineString: MultiLineString): MultiLineString =
     MultiLineString(lineStrings ++ multiLineString.lineStrings)
@@ -69,7 +72,7 @@ object MultiLineString:
       case (_, None)                        => None
     .map(apply)
 
-final case class MultiPoint(points: List[Point]) extends Geometry:
+final case class MultiPoint(points: List[Point]) extends Geometry derives Eq:
   def combine(point: Point): MultiPoint = MultiPoint(points :+ point)
   def combine(multiPoint: MultiPoint): MultiPoint = MultiPoint(points ++ multiPoint.points)
   override def combine(geometry: Geometry): Geometry = geometry match
@@ -83,7 +86,7 @@ object MultiPoint:
 
   def fromCoordinates(coordinates: List[Position]): MultiPoint = MultiPoint(coordinates.map(Point.apply))
 
-final case class MultiPolygon(polygons: List[Polygon]) extends Geometry:
+final case class MultiPolygon(polygons: List[Polygon]) extends Geometry derives Eq:
   def combine(polygon: Polygon): MultiPolygon = MultiPolygon(polygons :+ polygon)
   def combine(multiPolygon: MultiPolygon): MultiPolygon = MultiPolygon(polygons ++ multiPolygon.polygons)
   override def combine(geometry: Geometry): Geometry = geometry match
@@ -99,7 +102,7 @@ object MultiPolygon:
   def fromCoordinates(coordinates: List[List[List[Position]]]): MultiPolygon =
     MultiPolygon(coordinates.map(Polygon.fromCoordinates))
 
-final case class Point(position: Position) extends Geometry:
+final case class Point(position: Position) extends Geometry derives Eq:
   def combine(point: Point): MultiPoint = MultiPoint(List(this, point))
   def combine(multiPoint: MultiPoint): MultiPoint = MultiPoint(this :: multiPoint.points)
   override def combine(geometry: Geometry): Geometry = geometry match
@@ -111,7 +114,7 @@ final case class Point(position: Position) extends Geometry:
 object Point:
   val Type: String = "Point"
 
-final case class Polygon(bounds: List[Position], holes: List[List[Position]]) extends Geometry:
+final case class Polygon(bounds: List[Position], holes: List[List[Position]]) extends Geometry derives Eq:
   def combine(polygon: Polygon): MultiPolygon = MultiPolygon(List(this, polygon))
   def combine(multiPolygon: MultiPolygon): MultiPolygon = MultiPolygon(this :: multiPolygon.polygons)
   override def combine(geometry: Geometry): Geometry = geometry match

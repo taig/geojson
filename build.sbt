@@ -4,6 +4,7 @@ import sbtcrossproject.CrossProject
 val Version = new {
   val Circe = "0.14.14"
   val Java = "17"
+  val Kittens = "3.5.0"
   val Scala3 = "3.3.6"
 }
 
@@ -50,6 +51,11 @@ lazy val root = module(identifier = None, jvmOnly = true)
   .aggregate(core, circe)
 
 lazy val core = module(Some("core"))
+  .settings(
+    libraryDependencies ++=
+      "org.typelevel" %% "kittens" % Version.Kittens ::
+        Nil
+  )
 
 lazy val circe = module(Some("circe"))
   .settings(
