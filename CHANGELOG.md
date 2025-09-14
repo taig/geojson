@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1
+
+_2025-09-14_
+
+- Derive Eq instances via kittens
+
 ## 0.1.0
 
 _2025-09-14_
