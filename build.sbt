@@ -5,7 +5,7 @@ val Version = new {
   val Circe = "0.14.15"
   val Java = "17"
   val Kittens = "3.5.0"
-  val Scala3 = "3.3.6"
+  val Scala3 = "3.3.7"
 }
 
 def module(identifier: Option[String], jvmOnly: Boolean = false): CrossProject = {
