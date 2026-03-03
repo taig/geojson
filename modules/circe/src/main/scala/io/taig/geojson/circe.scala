@@ -101,8 +101,13 @@ trait circe:
   given encodeMultiPoint: Encoder.AsObject[MultiPoint] = multiPoint =>
     JsonObject("type" := MultiPoint.Type, "coordinates" := multiPoint.toCoordinates)
 
-  given decodeMultiPolygon: Decoder[MultiPolygon] =
-    _.get[List[List[List[Position]]]]("coordinates").map(MultiPolygon.fromCoordinates)
+  given decodeMultiPolygon: Decoder[MultiPolygon] = cursor =>
+    cursor
+      .get[List[List[List[Position]]]]("coordinates")
+      .flatMap: coordinates =>
+        MultiPolygon
+          .fromCoordinates(coordinates)
+          .toRight(DecodingFailure("Invalid format", cursor.downField("coordinates").history))
 
   given encodeMultiPolygon: Encoder.AsObject[MultiPolygon] = multiPolygon =>
     JsonObject("type" := MultiPolygon.Type, "coordinates" := multiPolygon.toCoordinates)
@@ -112,8 +117,13 @@ trait circe:
   given encodePoint: Encoder.AsObject[Point] = point =>
     JsonObject("type" := Point.Type, "coordinates" := point.position)
 
-  given decodePolygon: Decoder[Polygon] =
-    _.get[List[List[Position]]]("coordinates").map(Polygon.fromCoordinates)
+  given decodePolygon: Decoder[Polygon] = cursor =>
+    cursor
+      .get[List[List[Position]]]("coordinates")
+      .flatMap: coordinates =>
+        Polygon
+          .fromCoordinates(coordinates)
+          .toRight(DecodingFailure("Invalid format", cursor.downField("coordinates").history))
 
   given encodePolygon: Encoder.AsObject[Polygon] = polygon =>
     JsonObject("type" := Polygon.Type, "coordinates" := polygon.toCoordinates)
