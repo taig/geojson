@@ -2,6 +2,7 @@ package io.taig.geojson
 
 import cats.Eq
 import cats.derived.*
+import cats.data.NonEmptyList
 
 sealed abstract class GeoJson extends Product with Serializable derives Eq
 
@@ -106,7 +107,7 @@ final case class MultiPolygon(polygons: List[Polygon]) extends Geometry derives 
     case geomtery: MultiPolygon => combine(geomtery)
     case geometry               => toGeometryCollection.combine(geometry)
 
-  def toCoordinates: List[List[List[Position]]] = polygons.map(_.toCoordinates)
+  def toCoordinates: List[List[NonEmptyList[Position]]] = polygons.map(_.toCoordinates)
 
 object MultiPolygon:
   val Type: String = "MultiPolygon"
@@ -137,7 +138,7 @@ object Point:
 final case class Polygon(exterior: LinearRing, holes: List[LinearRing]) extends Geometry derives Eq:
   def combine(polygon: Polygon): MultiPolygon = MultiPolygon(List(this, polygon))
 
-  def combine(multiPolygon: MultiPolygon): MultiPolygon = MultiPolygon(this :: multiPolygon.polygons)
+  def combine(polygon: MultiPolygon): MultiPolygon = MultiPolygon(this :: polygon.polygons)
 
   override def combine(geometry: Geometry): Geometry = geometry match
     case geomtery: Polygon      => combine(geomtery)
@@ -146,7 +147,7 @@ final case class Polygon(exterior: LinearRing, holes: List[LinearRing]) extends 
 
   def toMultiPolygon: MultiPolygon = MultiPolygon(List(this))
 
-  def toCoordinates: List[List[Position]] = exterior.toCoordinates :: holes.map(_.toCoordinates)
+  def toCoordinates: List[NonEmptyList[Position]] = exterior.toCoordinates :: holes.map(_.toCoordinates)
 
 object Polygon:
   val Type: String = "Polygon"
@@ -154,10 +155,9 @@ object Polygon:
   def fromCoordinates(coordinates: List[List[Position]]): Option[Polygon] = coordinates match
     case exterior :: holes =>
       for
-        exteriorRing <- LinearRing.fromCoordinates(exterior)
-        holeRings <- holes
-          .foldRight(Option(List.empty[LinearRing])):
-            case (positions, Some(rings)) => LinearRing.fromCoordinates(positions).map(_ :: rings)
-            case (_, None)                => None
-      yield Polygon(exteriorRing, holeRings)
+        exterior <- LinearRing.fromCoordinates(exterior)
+        holes <- holes.foldRight(Option(List.empty[LinearRing])):
+          case (positions, Some(rings)) => LinearRing.fromCoordinates(positions).map(_ :: rings)
+          case (_, None)                => None
+      yield Polygon(exterior, holes)
     case Nil => None
