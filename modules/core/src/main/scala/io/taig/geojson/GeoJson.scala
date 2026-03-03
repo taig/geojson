@@ -6,9 +6,8 @@ import cats.derived.*
 sealed abstract class GeoJson extends Product with Serializable derives Eq
 
 final case class FeatureCollection(features: List[Feature]) extends GeoJson derives Eq:
-  def combine(featureCollection: FeatureCollection): FeatureCollection = FeatureCollection(
-    this.features ++ featureCollection.features
-  )
+  def combine(collection: FeatureCollection): FeatureCollection =
+    FeatureCollection(features ++ collection.features)
 
 object FeatureCollection:
   val Type: String = "FeatureCollection"
@@ -16,6 +15,7 @@ object FeatureCollection:
 final case class Feature(id: Option[String], geometry: Option[Geometry], properties: Option[Map[String, String]])
     extends GeoJson derives Eq:
   def combine(feature: Feature): FeatureCollection = FeatureCollection(List(this, feature))
+
   def toFeatureCollection: FeatureCollection = FeatureCollection(List(this))
 
 object Feature:
@@ -38,12 +38,16 @@ object GeometryCollection:
 
 final case class LineString(first: Position, second: Position, additional: List[Position]) extends Geometry derives Eq:
   def combine(geometry: LineString): MultiLineString = MultiLineString(List(this, geometry))
+
   def combine(geometry: MultiLineString): MultiLineString = MultiLineString(geometry.lineStrings :+ this)
+
   override def combine(geometry: Geometry): Geometry = geometry match
     case geomtery: LineString      => combine(geomtery)
     case geomtery: MultiLineString => combine(geomtery)
     case geometry                  => toGeometryCollection.combine(geometry)
+
   def toMultiLineString: MultiLineString = MultiLineString(List(this))
+
   def toCoordinates: List[Position] = first :: second :: additional
 
 object LineString:
@@ -55,12 +59,15 @@ object LineString:
 
 final case class MultiLineString(lineStrings: List[LineString]) extends Geometry derives Eq:
   def combine(lineString: LineString): MultiLineString = MultiLineString(lineStrings :+ lineString)
+
   def combine(multiLineString: MultiLineString): MultiLineString =
     MultiLineString(lineStrings ++ multiLineString.lineStrings)
+
   override def combine(geometry: Geometry): Geometry = geometry match
     case geomtery: LineString      => combine(geomtery)
     case geomtery: MultiLineString => combine(geomtery)
     case geometry                  => toGeometryCollection.combine(geometry)
+
   def toCoordinates: List[List[Position]] = lineStrings.map(_.toCoordinates)
 
 object MultiLineString:
@@ -74,11 +81,14 @@ object MultiLineString:
 
 final case class MultiPoint(points: List[Point]) extends Geometry derives Eq:
   def combine(point: Point): MultiPoint = MultiPoint(points :+ point)
+
   def combine(multiPoint: MultiPoint): MultiPoint = MultiPoint(points ++ multiPoint.points)
+
   override def combine(geometry: Geometry): Geometry = geometry match
     case geomtery: Point      => combine(geomtery)
     case geomtery: MultiPoint => combine(geomtery)
     case geometry             => toGeometryCollection.combine(geometry)
+
   def toCoordinates: List[Position] = points.map(_.position)
 
 object MultiPoint:
@@ -88,11 +98,14 @@ object MultiPoint:
 
 final case class MultiPolygon(polygons: List[Polygon]) extends Geometry derives Eq:
   def combine(polygon: Polygon): MultiPolygon = MultiPolygon(polygons :+ polygon)
+
   def combine(multiPolygon: MultiPolygon): MultiPolygon = MultiPolygon(polygons ++ multiPolygon.polygons)
+
   override def combine(geometry: Geometry): Geometry = geometry match
     case geomtery: Polygon      => combine(geomtery)
     case geomtery: MultiPolygon => combine(geomtery)
     case geometry               => toGeometryCollection.combine(geometry)
+
   def toCoordinates: List[List[List[Position]]] = polygons.map(_.toCoordinates)
 
 object MultiPolygon:
@@ -104,11 +117,14 @@ object MultiPolygon:
 
 final case class Point(position: Position) extends Geometry derives Eq:
   def combine(point: Point): MultiPoint = MultiPoint(List(this, point))
+
   def combine(multiPoint: MultiPoint): MultiPoint = MultiPoint(this :: multiPoint.points)
+
   override def combine(geometry: Geometry): Geometry = geometry match
     case geomtery: Point      => combine(geomtery)
     case geomtery: MultiPoint => combine(geomtery)
     case geometry             => toGeometryCollection.combine(geometry)
+
   def toMultiPoint: MultiPoint = MultiPoint(List(this))
 
 object Point:
@@ -116,12 +132,16 @@ object Point:
 
 final case class Polygon(bounds: List[Position], holes: List[List[Position]]) extends Geometry derives Eq:
   def combine(polygon: Polygon): MultiPolygon = MultiPolygon(List(this, polygon))
+
   def combine(multiPolygon: MultiPolygon): MultiPolygon = MultiPolygon(this :: multiPolygon.polygons)
+
   override def combine(geometry: Geometry): Geometry = geometry match
     case geomtery: Polygon      => combine(geomtery)
     case geomtery: MultiPolygon => combine(geomtery)
     case geometry               => toGeometryCollection.combine(geometry)
+
   def toMultiPolygon: MultiPolygon = MultiPolygon(List(this))
+
   def toCoordinates: List[List[Position]] = bounds :: holes
 
 object Polygon:

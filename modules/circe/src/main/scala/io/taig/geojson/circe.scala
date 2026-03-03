@@ -40,7 +40,7 @@ trait circe:
   given encodeFeature: Encoder.AsObject[Feature] = feature =>
     JsonObject(
       "type" := "Feature",
-      "id" := feature.geometry,
+      "id" := feature.id,
       "geometry" := feature.geometry,
       "properties" := feature.properties
     )
