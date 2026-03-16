@@ -1,9 +1,9 @@
 package io.taig.geojson
 
-import cats.syntax.all.*
 import cats.Eq
-import cats.derived.*
 import cats.data.NonEmptyList
+import cats.derived.*
+import cats.syntax.all.*
 
 final case class LinearRing(first: Position, second: Position, third: Position, additional: List[Position]) derives Eq:
   def toCoordinates: NonEmptyList[Position] = NonEmptyList.ofInitLast(first :: second :: third :: additional, first)

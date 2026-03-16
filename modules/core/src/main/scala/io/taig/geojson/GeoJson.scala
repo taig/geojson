@@ -1,8 +1,8 @@
 package io.taig.geojson
 
 import cats.Eq
-import cats.derived.*
 import cats.data.NonEmptyList
+import cats.derived.*
 
 sealed abstract class GeoJson extends Product with Serializable derives Eq
 
