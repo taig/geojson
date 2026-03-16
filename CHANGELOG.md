@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.0
+
+_2026-03-16_
+
+- Fix erroneous Feature encoder
+- Fix Polygon to be based on LinearRing
+- Return NEL from LinearRing.toCoordinates
+- Upgrade CI dependencies
+- Upgrade to circe 0.14.15
+- Upgrade to sbt 1.12.5
+- Upgrade to sbt 1.12.6
+- Upgrade to sbt-houserules 0.11.10
+- Upgrade to sbt-scalajs 1.20.2
+- Upgrade to scala 3.3.7
+
 ## 0.1.1
 
 _2025-09-14_
